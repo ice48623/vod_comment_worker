@@ -4,9 +4,9 @@ import os
 import pika
 import json
 import logging
+from rabbit import Rabbit
 
 
-RABBIT_HOST = os.getenv('RABBIT_HOST', 'localhost')
 MONGO_URL = os.getenv('MONGO_URL', 'localhost')
 MONGO_PORT = int(os.getenv('MONGO_PORT', 27017))
 MONGO_DB = os.getenv('MONGO_DB', 'my_db')
@@ -21,20 +21,22 @@ LOG.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST))
-channel = connection.channel()
-channel.queue_declare(queue='comment')
-
 def update_vid_comment(data):
-    vid_id = data['vid_id']
-    comment = data['comment']
+    video_id = data.get('video_id')
+    comment = data.get('comment')
+    username = data.get('username')
+
+    db_comment = {
+        'comment': comment,
+        'username': username
+    }
 
     collection.find_one_and_update(
-        {'vid_id' : vid_id},
-        { '$push' : {'vid_comments' : comment}}
+        {'video_id': video_id},
+        {'$push': {'comments': db_comment}}
     )
 
-    return vid_id
+    return video_id
 
 def callback(ch, method, properties, body):
     # update data in mongo db
@@ -43,10 +45,9 @@ def callback(ch, method, properties, body):
     
     LOG.info(f'Comments of video, {vid_id}, is updated')
 
-channel.basic_consume(callback,
-                      queue='comment',
-                      no_ack=True)
+if __name__ == '__main__':
+    rabbit = Rabbit('comment')
+    rabbit.consume(callback)
 
-
-LOG.info(' [*] Waiting for Job.')
-channel.start_consuming()
+    LOG.info(' [*] Waiting for Job.')
+    rabbit.start_consuming()
