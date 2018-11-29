@@ -16,6 +16,7 @@ db = mongoClient[MONGO_DB]
 collection = db[MONGO_COLLECTION]
 
 LOG = logging
+LOG.getLogger('pika').setLevel(LOG.INFO)
 LOG.basicConfig(
     level=LOG.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
