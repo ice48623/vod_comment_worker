@@ -25,11 +25,11 @@ LOG.basicConfig(
 def update_vid_comment(data):
     video_id = data.get('video_id')
     comment = data.get('comment')
-    uid = data.get('uid')
+    username = data.get('username')
 
     db_comment = {
         'comment': comment,
-        'uid': uid
+        'username': username
     }
 
     collection.find_one_and_update(
